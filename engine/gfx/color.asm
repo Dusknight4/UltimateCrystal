@@ -492,6 +492,11 @@ LoadPalette_White_Col1_Col2_Black:
 	ret
 
 LoadPalette_White_Col2_Col1_Black:
+	ldh a, [rWBK]
+	push af
+	ld a, BANK(wBGPals1)
+	ldh [rWBK], a
+
 	ld a, LOW(PALRGB_WHITE)
 	ld [de], a
 	inc de
@@ -499,12 +504,11 @@ LoadPalette_White_Col2_Col1_Black:
 	ld [de], a
 	inc de
 
-	ld c, 2 * PAL_COLOR_SIZE
-	; Skip over Color 1 (2 bytes)
+	; Skip Color 1
 	inc hl
 	inc hl
 
-	; Load Color 2 (2 bytes)
+	; Load Color 2
 	ld a, [hli]
 	ld [de], a
 	inc de
@@ -512,13 +516,11 @@ LoadPalette_White_Col2_Col1_Black:
 	ld [de], a
 	inc de
 
-	; HL is now after Color 2 — go back to start of Color 1
+	; Go back and load Color 1
 	dec hl
 	dec hl
 	dec hl
 	dec hl
-
-	; Load Color 1 (2 bytes)
 	ld a, [hli]
 	ld [de], a
 	inc de
@@ -526,12 +528,13 @@ LoadPalette_White_Col2_Col1_Black:
 	ld [de], a
 	inc de
 
-
+	; End with black
 	xor a
 	ld [de], a
 	inc de
 	ld [de], a
 	inc de
+
 	pop af
 	ldh [rWBK], a
 	ret
