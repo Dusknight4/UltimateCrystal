@@ -83,10 +83,51 @@ _CGB_BattleColors:
 	ld de, wBGPals1
 	call GetBattlemonBackpicPalettePointer
 	push hl
-	call LoadPalette_White_Col1_Col2_Black ; PAL_BATTLE_BG_PLAYER
+; If species is 0, force Col1_Col2
+ld a, [wBattleMonSpecies]
+and a
+jr nz, .CheckDVs
+
+; Species is 0 → use Col1_Col2
+call LoadPalette_White_Col1_Col2_Black
+jr .PaletteDone
+
+.CheckDVs:
+; Determine whether to use Col2_Col1 or Col1_Col2 based on Attack DV in wBattleMonDVs
+ld a, [wBattleMonDVs]   ; A = Attack/Defense DV byte
+swap a                  ; Move Attack DV to lower nibble (was upper nibble)
+and 1                   ; Mask least significant bit of Attack DV
+jr z, .EvenAttackDV     ; If 0, Attack DV is even
+
+; Odd Attack DV → use Col1_Col2
+call LoadPalette_White_Col1_Col2_Black
+jr .PaletteDone
+
+.EvenAttackDV:
+; Even Attack DV → use Col2_Col1
+call LoadPalette_White_Col2_Col1_Black
+
+.PaletteDone:
+
+
 	call GetEnemyFrontpicPalettePointer
 	push hl
-	call LoadPalette_White_Col1_Col2_Black ; PAL_BATTLE_BG_ENEMY
+; Determine whether to use Col2_Col1 or Col1_Col2 based on Attack DV in wEnemyMonDVs
+ld a, [wEnemyMonDVs]    ; A = Attack/Defense DV byte
+swap a                  ; Shift upper nibble (Attack DV) into lower nibble
+and 1                   ; Isolate the least significant bit of Attack DV
+jr z, .EvenEnemyAttackDV
+
+; Odd Attack DV → use Col1_Col2
+call LoadPalette_White_Col1_Col2_Black
+jr .EnemyPaletteDone
+
+.EvenEnemyAttackDV:
+; Even Attack DV → use Col2_Col1
+call LoadPalette_White_Col2_Col1_Black
+
+.EnemyPaletteDone:
+
 	ld a, [wEnemyHPPal]
 	ld l, a
 	ld h, 0
@@ -205,10 +246,25 @@ _CGB_StatsScreenHPPals:
 	ld bc, HPBarPals
 	add hl, bc
 	call LoadPalette_White_Col1_Col2_Black ; hp palette
-	ld a, [wCurPartySpecies]
+	ld a, [wTempMonDVs + 1]
 	ld bc, wTempMonDVs
 	call GetPlayerOrMonPalettePointer
-	call LoadPalette_White_Col1_Col2_Black ; mon palette
+	; Check if Attack DV is even
+	ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+	swap a                  ; Put Attack DV into low nibble
+	and 1                   ; Mask lowest bit of Attack DV
+	jr z, .EvenAttackDV     ; If 0, it's even
+
+	; Odd Attack DV → use Col1_Col2 version
+	call LoadPalette_White_Col1_Col2_Black
+	jr .DonePalette
+
+	.EvenAttackDV:
+	; Even Attack DV → use Col2_Col1 version
+	call LoadPalette_White_Col2_Col1_Black
+
+	.DonePalette:
+
 	ld hl, ExpBarPalette
 	call LoadPalette_White_Col1_Col2_Black ; exp palette
 	ld hl, StatsScreenPagePals
@@ -260,16 +316,32 @@ _CGB_Pokedex:
 	ld a, PREDEFPAL_POKEDEX
 	call GetPredefPal
 	call LoadHLPaletteIntoDE ; dex interface palette
-	ld a, [wCurPartySpecies]
+	ld a, [wTempMonDVs + 1]
+	ld bc, wTempMonDVs
 	cp $ff
 	jr nz, .is_pokemon
-	ld hl, PokedexQuestionMarkPalette
-	call LoadHLPaletteIntoDE ; green question mark palette
-	jr .got_palette
+	;ld hl, PokedexQuestionMarkPalette
+	;call LoadHLPaletteIntoDE ; green question mark palette
+	jr .is_pokemon
 
 .is_pokemon
-	call GetMonPalettePointer
-	call LoadPalette_White_Col1_Col2_Black ; mon palette
+	call GetPlayerOrMonPalettePointer
+	; Check if Attack DV is even
+	ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+	swap a                  ; Put Attack DV into low nibble
+	and 1                   ; Mask lowest bit of Attack DV
+	jr z, .EvenAttackDV     ; If 0, it's even
+
+	; Odd Attack DV → use Col1_Col2 version
+	call LoadPalette_White_Col1_Col2_Black
+	jr .got_palette
+
+	.EvenAttackDV:
+	; Even Attack DV → use Col2_Col1 version
+	call LoadPalette_White_Col2_Col1_Black
+
+.DonePalette:
+
 .got_palette
 	call WipeAttrmap
 	hlcoord 1, 1, wAttrmap
@@ -299,17 +371,32 @@ _CGB_BillsPC:
 	ld a, PREDEFPAL_POKEDEX
 	call GetPredefPal
 	call LoadHLPaletteIntoDE
-	ld a, [wCurPartySpecies]
+	ld a, [wTempMonDVs + 1]
 	cp $ff
 	jr nz, .GetMonPalette
-	ld hl, BillsPCOrangePalette
-	call LoadHLPaletteIntoDE
-	jr .GotPalette
+	;ld hl, BillsPCOrangePalette
+	;call LoadHLPaletteIntoDE
+	jr .DonePalette
 
 .GetMonPalette:
 	ld bc, wTempMonDVs
 	call GetPlayerOrMonPalettePointer
-	call LoadPalette_White_Col1_Col2_Black
+; Check if Attack DV is even
+ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+swap a                  ; Put Attack DV into low nibble
+and 1                   ; Mask lowest bit of Attack DV
+jr z, .EvenAttackDV     ; If 0, it's even
+
+; Odd Attack DV → use Col1_Col2 version
+call LoadPalette_White_Col1_Col2_Black
+jr .DonePalette
+
+.EvenAttackDV:
+; Even Attack DV → use Col2_Col1 version
+call LoadPalette_White_Col2_Col1_Black
+
+.DonePalette:
+
 .GotPalette:
 	call WipeAttrmap
 	hlcoord 1, 4, wAttrmap
@@ -554,7 +641,20 @@ _CGB_Evolution:
 	ld b, h
 	ld a, [wPlayerHPPal]
 	call GetPlayerOrMonPalettePointer
+	; Check if Attack DV is even
+	ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+	swap a                  ; Put Attack DV into low nibble
+	and 1                   ; Mask lowest bit of Attack DV
+	jr z, .EvenAttackDV     ; If 0, it's even
+	; Odd Attack DV → use Col1_Col2 version
 	call LoadPalette_White_Col1_Col2_Black
+		jr .DonePalette
+
+	.EvenAttackDV:
+	; Even Attack DV → use Col2_Col1 version
+	call LoadPalette_White_Col2_Col1_Black
+
+	.DonePalette:
 	ld hl, BattleObjectPals
 	ld de, wOBPals1 palette PAL_BATTLE_OB_GRAY
 	ld bc, 6 palettes
@@ -894,10 +994,24 @@ INCLUDE "gfx/splash/ditto.pal"
 
 _CGB_PlayerOrMonFrontpicPals:
 	ld de, wBGPals1
-	ld a, [wCurPartySpecies]
+	ld a, [wTempMonDVs + 1]
 	ld bc, wTempMonDVs
 	call GetPlayerOrMonPalettePointer
+	; Check if Attack DV is even
+	ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+	swap a                  ; Put Attack DV into low nibble
+	and 1                   ; Mask lowest bit of Attack DV
+	jr z, .EvenAttackDV     ; If 0, it's even
+
+	; Odd Attack DV → use Col1_Col2 version
 	call LoadPalette_White_Col1_Col2_Black
+		jr .DonePalette
+
+	.EvenAttackDV:
+	; Even Attack DV → use Col2_Col1 version
+	call LoadPalette_White_Col2_Col1_Black
+
+	.DonePalette:
 	call WipeAttrmap
 	call ApplyAttrmap
 	call ApplyPals
@@ -929,10 +1043,24 @@ _CGB_TradeTube:
 
 _CGB_TrainerOrMonFrontpicPals:
 	ld de, wBGPals1
-	ld a, [wCurPartySpecies]
+	ld a, [wTempMonDVs + 1]
 	ld bc, wTempMonDVs
 	call GetFrontpicPalettePointer
+	; Check if Attack DV is even
+	ld a, [wTempMonDVs]     ; A = Attack/Defense DV byte
+	swap a                  ; Put Attack DV into low nibble
+	and 1                   ; Mask lowest bit of Attack DV
+	jr z, .EvenAttackDV     ; If 0, it's even
+
+	; Odd Attack DV → use Col1_Col2 version
 	call LoadPalette_White_Col1_Col2_Black
+	jr .DonePalette
+
+	.EvenAttackDV:
+	; Even Attack DV → use Col2_Col1 version
+	call LoadPalette_White_Col2_Col1_Black
+
+	.DonePalette:
 	call WipeAttrmap
 	call ApplyAttrmap
 	call ApplyPals

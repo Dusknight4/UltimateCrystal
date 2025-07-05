@@ -3903,16 +3903,12 @@ InitBattleMon:
 	ret
 
 BattleCheckPlayerShininess:
-	call GetPartyMonDVs
-	jr BattleCheckShininess
+	ret
 
 BattleCheckEnemyShininess:
-	call GetEnemyMonDVs
+	ret
 
 BattleCheckShininess:
-	ld b, h
-	ld c, l
-	callfar CheckShininess
 	ret
 
 GetPartyMonDVs:
@@ -6056,13 +6052,11 @@ LoadEnemyMon:
 .InitDVs:
 ; Trainer DVs
 
-; All trainers have preset DVs, determined by class
-; See GetTrainerDVs for more on that
-	farcall GetTrainerDVs
+; Make trainer DVs random like wild Pokémon
 ; These are the DVs we'll use if we're actually in a trainer battle
 	ld a, [wBattleMode]
 	dec a
-	jr nz, .UpdateDVs
+	jr nz, .GenerateDVs  ; was .UpdateDVs before — now skip to random generation
 
 ; Wild DVs
 ; Here's where the fun starts
@@ -6506,7 +6500,9 @@ SwapBattlerLevels: ; unreferenced
 
 BattleWinSlideInEnemyTrainerFrontpic:
 	xor a
-	ld [wTempEnemyMonSpecies], a
+	ld [wEnemyMonDVs + 1], a
+	ld a, $FF
+	ld [wEnemyMonDVs], a
 	call FinishBattleAnim
 	ld a, [wOtherTrainerClass]
 	ld [wTrainerClass], a
@@ -8124,6 +8120,8 @@ InitEnemyTrainer:
 	farcall StubbedTrainerRankings_TrainerBattles
 	xor a
 	ld [wTempEnemyMonSpecies], a
+	ld a, $FF
+	ld [wEnemyMonDVs], a
 	callfar GetTrainerAttributes
 	callfar ReadTrainerParty
 

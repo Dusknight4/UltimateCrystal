@@ -152,7 +152,7 @@ TeachTMHM:
 
 	ld c, HAPPINESS_LEARNMOVE
 	callfar ChangeHappiness
-	call ConsumeTM
+	;call ConsumeTM
 	jr .learned_move
 
 .nope

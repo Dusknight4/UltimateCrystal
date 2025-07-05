@@ -1,42 +1,17 @@
 INCLUDE "engine/gfx/sgb_layouts.asm"
 
-DEF SHINY_ATK_MASK EQU %0010
-DEF SHINY_DEF_DV EQU 10
-DEF SHINY_SPD_DV EQU 10
-DEF SHINY_SPC_DV EQU 10
-
 CheckShininess:
 ; Check if a mon is shiny by DVs at bc.
+; 50% chance: shiny if Defense DV (lower nibble) >= 8
 ; Return carry if shiny.
 
 	ld l, c
-	ld h, b
-
-; Attack
-	ld a, [hl]
-	and SHINY_ATK_MASK << 4
-	jr z, .not_shiny
-
-; Defense
-	ld a, [hli]
-	and %1111
-	cp SHINY_DEF_DV
-	jr nz, .not_shiny
-
-; Speed
-	ld a, [hl]
-	and %1111 << 4
-	cp SHINY_SPD_DV << 4
-	jr nz, .not_shiny
-
-; Special
-	ld a, [hl]
-	and %1111
-	cp SHINY_SPC_DV
-	jr nz, .not_shiny
-
-; shiny
-	scf
+	ld h, b	
+	ld a, [hl]          ; A = Def DV byte
+	and $0F             ; Isolate Defense DV (lower nibble)
+	cp 8
+	jr c, .not_shiny    ; If Defense DV < 8, not shiny
+	scf                 ; Set carry: shiny
 	ret
 
 .not_shiny
@@ -516,6 +491,52 @@ LoadPalette_White_Col1_Col2_Black:
 	ldh [rWBK], a
 	ret
 
+LoadPalette_White_Col2_Col1_Black:
+	ld a, LOW(PALRGB_WHITE)
+	ld [de], a
+	inc de
+	ld a, HIGH(PALRGB_WHITE)
+	ld [de], a
+	inc de
+
+	ld c, 2 * PAL_COLOR_SIZE
+	; Skip over Color 1 (2 bytes)
+	inc hl
+	inc hl
+
+	; Load Color 2 (2 bytes)
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hli]
+	ld [de], a
+	inc de
+
+	; HL is now after Color 2 — go back to start of Color 1
+	dec hl
+	dec hl
+	dec hl
+	dec hl
+
+	; Load Color 1 (2 bytes)
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hli]
+	ld [de], a
+	inc de
+
+
+	xor a
+	ld [de], a
+	inc de
+	ld [de], a
+	inc de
+	pop af
+	ldh [rWBK], a
+	ret
+
+
 FillBoxCGB:
 .row
 	push bc
@@ -665,7 +686,7 @@ GetBattlemonBackpicPalettePointer:
 	farcall GetPartyMonDVs
 	ld c, l
 	ld b, h
-	ld a, [wTempBattleMonSpecies]
+	ld a, [wBattleMonDVs + 1]
 	call GetPlayerOrMonPalettePointer
 	pop de
 	ret
@@ -675,7 +696,7 @@ GetEnemyFrontpicPalettePointer:
 	farcall GetEnemyMonDVs
 	ld c, l
 	ld b, h
-	ld a, [wTempEnemyMonSpecies]
+	ld a, [wEnemyMonDVs + 1]
 	call GetFrontpicPalettePointer
 	pop de
 	ret
