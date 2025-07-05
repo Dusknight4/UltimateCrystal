@@ -17,5 +17,5 @@
 	dn EGG_INDETERMINATE, EGG_INDETERMINATE ; egg groups
 
 	; tm/hm learnset
-	tmhm
+	tmhm FLAMETHROWER, THUNDERBOLT, ICE_BEAM, PSYCHIC_M, HEADBUTT, ROLLOUT
 	; end
