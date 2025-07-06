@@ -92,6 +92,7 @@ CharmeleonEvosAttacks:
 	db 20, RAGE
 	db 27, SCARY_FACE
 	db 34, FLAMETHROWER
+	db 37, DRAGONBREATH
 	db 41, SLASH
 	db 48, DRAGON_RAGE
 	db 55, FIRE_SPIN
@@ -109,6 +110,7 @@ CharizardEvosAttacks:
 	db 27, SCARY_FACE
 	db 34, FLAMETHROWER
 	db 36, WING_ATTACK
+	db 37, DRAGONBREATH
 	db 44, SLASH
 	db 54, DRAGON_RAGE
 	db 64, FIRE_SPIN
@@ -2033,6 +2035,7 @@ DratiniEvosAttacks:
 	db 22, DRAGON_RAGE
 	db 29, SLAM
 	db 36, AGILITY
+	db 40, DRAGONBREATH
 	db 43, SAFEGUARD
 	db 50, OUTRAGE
 	db 57, HYPER_BEAM
@@ -2050,6 +2053,7 @@ DragonairEvosAttacks:
 	db 22, DRAGON_RAGE
 	db 29, SLAM
 	db 38, AGILITY
+	db 40, DRAGONBREATH
 	db 47, SAFEGUARD
 	db 56, OUTRAGE
 	db 65, HYPER_BEAM
@@ -2067,6 +2071,7 @@ DragoniteEvosAttacks:
 	db 29, SLAM
 	db 38, AGILITY
 	db 47, SAFEGUARD
+	db 50, DRAGONBREATH
 	db 55, WING_ATTACK
 	db 60, ANCIENTPOWER
 	db 61, OUTRAGE
@@ -2084,6 +2089,10 @@ MewtwoEvosAttacks:
 	db 55, MIST
 	db 66, PSYCHIC_M
 	db 71, ANCIENTPOWER
+	db 72, THUNDER
+	db 73, HYDRO_PUMP
+	db 74, BLIZZARD
+	db 75, FIRE_BLAST
 	db 77, AMNESIA
 	db 88, RECOVER
 	db 99, SAFEGUARD
@@ -2667,17 +2676,21 @@ YanmaEvosAttacks:
 	db 1, TACKLE
 	db 1, FORESIGHT
 	db 1, LEECH_LIFE
+	db 1, TWISTER
 	db 7, QUICK_ATTACK
 	db 13, DOUBLE_TEAM
 	db 15, GUST
+	db 16, TWISTER
 	db 18, PSYBEAM
 	db 19, SONICBOOM
 	db 20, LEECH_LIFE
 	db 25, DETECT
+	db 28, DRAGONBREATH
 	db 30, WING_ATTACK
 	db 31, SUPERSONIC
 	db 37, SWIFT
 	db 43, SCREECH
+	db 50, EXTREMESPEED
 	db 0 ; no more level-up moves
 
 WooperEvosAttacks:
