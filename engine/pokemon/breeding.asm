@@ -182,7 +182,16 @@ DoEggStep::
 	ret z
 	cp EGG
 	jr nz, .next
-	dec [hl]
+	ld a, [hl]
+	cp 6
+	jr c, .set_zero
+	sub 6
+	jr .store
+	.set_zero
+	xor a ; A = 0
+	.store
+	ld [hl], a
+
 	jr nz, .next
 	ld a, 1
 	and a
@@ -766,10 +775,14 @@ EggHatch_AnimationSequence:
 Hatch_LoadFrontpicPal:
 	ld a, [wCurPartyMon]
 	ld bc, $30                  ; PARTYMON_STRUCT_LENGTH
-	ld hl, $DA40               ; wPartyMon1DVs
+	ld hl, $DCF5               ; wPartyMon1DVs
 	call AddNTimes                  ; move to Speed/Special DV
 	ld a, [hl]                 ; A = Speed/Special DV
 	ld [wPlayerHPPal], a
+	; Move HL back 1 byte to get Attack/Defense DV
+	dec hl
+	ld a, [hl]
+	ld [wTempMonDVs], a
 	ld b, SCGB_EVOLUTION
 	ld c, $0
 	jp GetSGBLayout

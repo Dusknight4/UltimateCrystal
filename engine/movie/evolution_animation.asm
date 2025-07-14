@@ -124,6 +124,7 @@ EvolutionAnimation:
 	push af
 
 	ld a, [wPlayerHPPal]
+	ld a, [wEvolutionNewSpecies]
 	ld [wCurPartySpecies], a
 	hlcoord 7, 2
 	ld d, $0

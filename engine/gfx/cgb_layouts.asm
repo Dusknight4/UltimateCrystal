@@ -376,7 +376,7 @@ _CGB_BillsPC:
 	jr nz, .GetMonPalette
 	;ld hl, BillsPCOrangePalette
 	;call LoadHLPaletteIntoDE
-	jr .DonePalette
+	jr .GetMonPalette
 
 .GetMonPalette:
 	ld bc, wTempMonDVs
