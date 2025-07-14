@@ -783,9 +783,34 @@ Hatch_LoadFrontpicPal:
 	dec hl
 	ld a, [hl]
 	ld [wTempMonDVs], a
+
+	; Overwrite TID
+	ld a, [wCurPartyMon]
+	ld b, a
+	ld a, [wPlayerID]
+	ld hl, wPartyMon1ID
+	ld de, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld [hli], a
+	ld a, [wPlayerID + 1]
+	ld [hl], a
+
+	; Overwrite OT name
+	ld a, [wCurPartyMon]
+	ld b, a
+	ld hl, wPartyMon1OT
+	ld de, NAME_LENGTH
+	call AddNTimes
+	ld de, wPlayerName
+	ld bc, NAME_LENGTH
+	call CopyBytes
+
+
 	ld b, SCGB_EVOLUTION
 	ld c, $0
 	jp GetSGBLayout
+
+	
 
 EggHatch_CrackShell:
 	ld a, [wFrameCounter]

@@ -557,30 +557,19 @@ DayCare_InitBreeding:
 	ld hl, wEggMonOT
 	ld bc, NAME_LENGTH
 	call ByteFill
+
 	ld a, [wBreedMon1DVs]
 	ld [wTempMonDVs], a
 	ld a, [wBreedMon1DVs + 1]
 	ld [wTempMonDVs + 1], a
-	ld a, [wBreedMon1Species]
-	ld [wCurPartySpecies], a
-	ld a, TEMPMON
-	ld [wMonType], a
-	ld a, [wBreedMon1Species]
-	cp DITTO
-	ld a, $1
-	jr z, .LoadWhichBreedmonIsTheMother
-	ld a, [wBreedMon2Species]
-	cp DITTO
-	ld a, $0
-	jr z, .LoadWhichBreedmonIsTheMother
-	farcall GetGender
-	ld a, $0
-	jr z, .LoadWhichBreedmonIsTheMother
-	inc a
 
-.LoadWhichBreedmonIsTheMother:
+	; 50/50 chance: 0 = BreedMon1, 1 = BreedMon2
+	call Random
+	and 1
 	ld [wBreedMotherOrNonDitto], a
-	and a
+
+	; Choose egg species based on selected parent
+	ld a, [wBreedMotherOrNonDitto]
 	ld a, [wBreedMon1Species]
 	jr z, .GotMother
 	ld a, [wBreedMon2Species]
@@ -591,6 +580,7 @@ DayCare_InitBreeding:
 	callfar GetPreEvolution
 	ld a, EGG_LEVEL
 	ld [wCurPartyLevel], a
+
 
 ; Nidoran♀ can give birth to either gender of Nidoran
 	ld a, [wCurPartySpecies]
@@ -643,36 +633,80 @@ DayCare_InitBreeding:
 	ld [hli], a
 	dec b
 	jr nz, .loop2
+
+	; Custom DV inheritance
+	call Random
+	cp 21
+	jr c, .CopyBothFromP1 ; 8%
+
+	cp 42
+	jr c, .CopyBothFromP2 ; 8%
+
+	cp 68
+	jr c, .CopySecondFromP1 ; 10%
+
+	cp 94
+	jr c, .CopySecondFromP2 ; 10%
+
+	; Fallback: fully random
+	call Random
 	ld hl, wEggMonDVs
-	call Random
-	ld [hli], a
+	ld [hl], a
 	ld [wTempMonDVs], a
+
 	call Random
-	ld [hld], a
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	ld de, wBreedMon1DVs
-	ld a, [wBreedMon1Species]
-	cp DITTO
-	jr z, .GotDVs
-	ld de, wBreedMon2DVs
-	ld a, [wBreedMon2Species]
-	cp DITTO
-	jr z, .GotDVs
-	ld a, TEMPMON
-	ld [wMonType], a
-	push hl
-	farcall GetGender
-	pop hl
-	ld de, wBreedMon1DVs
-	ld bc, wBreedMon2DVs
-	jr c, .SkipDVs
-	jr z, .ParentCheck2
-	ld a, [wBreedMotherOrNonDitto]
-	and a
-	jr z, .GotDVs
-	ld d, b
-	ld e, c
-	jr .GotDVs
+	jr .SkipDVs
+
+.CopyBothFromP1:
+	ld a, [wBreedMon1DVs]
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon1DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jr .SkipDVs
+
+.CopyBothFromP2:
+	ld a, [wBreedMon2DVs]
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon2DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jr .SkipDVs
+
+.CopySecondFromP1:
+	call Random
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon1DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jr .SkipDVs
+
+.CopySecondFromP2:
+	call Random
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon2DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jr .SkipDVs
 
 .ParentCheck2:
 	ld a, [wBreedMotherOrNonDitto]
