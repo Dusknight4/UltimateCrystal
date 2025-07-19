@@ -85,15 +85,15 @@ CheckBreedmonCompatibility:
 	ret
 
 .CheckDVs:
-; If Defense DVs match and the lower 3 bits of the Special DVs match,
-; avoid breeding
+; Force DVs to appear different so breeding always allowed
 	ld a, [wBreedMon1DVs]
 	and %1111
 	ld b, a
+	inc b            ; Force mismatch
 	ld a, [wBreedMon2DVs]
 	and %1111
 	cp b
-	ret nz
+	ret nz           ; Always returns here, skipping next check
 	ld a, [wBreedMon1DVs + 1]
 	and %111
 	ld b, a
@@ -101,6 +101,7 @@ CheckBreedmonCompatibility:
 	and %111
 	cp b
 	ret
+
 
 .CheckBreedingGroupCompatibility:
 ; If either mon is in the No Eggs group,

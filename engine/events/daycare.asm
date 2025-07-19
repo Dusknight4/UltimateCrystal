@@ -637,16 +637,22 @@ DayCare_InitBreeding:
 	; Custom DV inheritance
 	call Random
 	cp 21
-	jr c, .CopyBothFromP1 ; 8%
+	jp c, .CopyBothFromP1 ; 8%
 
 	cp 42
-	jr c, .CopyBothFromP2 ; 8%
+	jp c, .CopyBothFromP2 ; 8%
 
 	cp 68
-	jr c, .CopySecondFromP1 ; 10%
+	jp c, .CopySecondFromP1 ; 10%
 
 	cp 94
-	jr c, .CopySecondFromP2 ; 10%
+	jp c, .CopySecondFromP2 ; 10%
+
+	cp 107
+	jp c, .CopyFlippedFromP1 ; ~5%
+
+	cp 120
+	jp c, .CopyFlippedFromP2 ; ~5%
 
 	; Fallback: fully random
 	call Random
@@ -658,7 +664,7 @@ DayCare_InitBreeding:
 	ld hl, wEggMonDVs + 1
 	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	jr .SkipDVs
+	jp .SkipDVs
 
 .CopyBothFromP1:
 	ld a, [wBreedMon1DVs]
@@ -670,7 +676,7 @@ DayCare_InitBreeding:
 	ld hl, wEggMonDVs + 1
 	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	jr .SkipDVs
+	jp .SkipDVs
 
 .CopyBothFromP2:
 	ld a, [wBreedMon2DVs]
@@ -682,7 +688,7 @@ DayCare_InitBreeding:
 	ld hl, wEggMonDVs + 1
 	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	jr .SkipDVs
+	jp .SkipDVs
 
 .CopySecondFromP1:
 	call Random
@@ -694,7 +700,7 @@ DayCare_InitBreeding:
 	ld hl, wEggMonDVs + 1
 	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	jr .SkipDVs
+	jp .SkipDVs
 
 .CopySecondFromP2:
 	call Random
@@ -706,7 +712,83 @@ DayCare_InitBreeding:
 	ld hl, wEggMonDVs + 1
 	ld [hl], a
 	ld [wTempMonDVs + 1], a
-	jr .SkipDVs
+	jp .SkipDVs
+
+.CopyFlippedFromP1:
+	; === Parent 1 parity-flip logic ===
+	ld a, [wBreedMon1DVs]
+	and %11110000
+	swap a
+	and %00001111
+	ld b, a
+	ld a, b
+	and %00000001
+	ld d, a
+
+	call Random
+	and %00001111
+	ld c, a
+	ld a, c
+	and %00000001
+	cp d
+	jr nz, .p1_ok
+	ld a, c
+	xor %00000001
+	ld c, a
+.p1_ok
+	swap c
+	and %11110000
+
+	ld a, [wBreedMon1DVs]
+	and %00001111
+	or c
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon1DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jp .SkipDVs
+
+.CopyFlippedFromP2:
+	; === Parent 2 parity-flip logic ===
+	ld a, [wBreedMon2DVs]
+	and %11110000
+	swap a
+	and %00001111
+	ld b, a
+	ld a, b
+	and %00000001
+	ld d, a
+
+	call Random
+	and %00001111
+	ld c, a
+	ld a, c
+	and %00000001
+	cp d
+	jr nz, .p2_ok
+	ld a, c
+	xor %00000001
+	ld c, a
+.p2_ok
+	swap c
+	and %11110000
+
+	ld a, [wBreedMon2DVs]
+	and %00001111
+	or c
+	ld hl, wEggMonDVs
+	ld [hl], a
+	ld [wTempMonDVs], a
+
+	ld a, [wBreedMon2DVs + 1]
+	ld hl, wEggMonDVs + 1
+	ld [hl], a
+	ld [wTempMonDVs + 1], a
+	jp .SkipDVs
 
 .ParentCheck2:
 	ld a, [wBreedMotherOrNonDitto]
