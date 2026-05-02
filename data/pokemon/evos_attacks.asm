@@ -689,10 +689,12 @@ DugtrioEvosAttacks:
 	db 1, SCRATCH
 	db 1, GROWL
 	db 1, MAGNITUDE
+	db 1, TRI_ATTACK
 	db 5, GROWL
 	db 9, MAGNITUDE
 	db 17, DIG
 	db 25, SAND_ATTACK
+	db 26, TRI_ATTACK
 	db 37, SLASH
 	db 49, EARTHQUAKE
 	db 61, FISSURE
@@ -1126,7 +1128,7 @@ MagnemiteEvosAttacks:
 
 MagnetonEvosAttacks:
 	db 0 ; no more evolutions
-	db 1, TACKLE
+	db 1, TRI_ATTACK
 	db 1, THUNDERSHOCK
 	db 1, SUPERSONIC
 	db 1, SONICBOOM
@@ -1136,6 +1138,7 @@ MagnetonEvosAttacks:
 	db 21, THUNDER_WAVE
 	db 27, LOCK_ON
 	db 35, SWIFT
+	db 40, TRI_ATTACK
 	db 43, SCREECH
 	db 53, ZAP_CANNON
 	db 0 ; no more level-up moves
