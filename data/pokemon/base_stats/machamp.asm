@@ -1,6 +1,6 @@
 	db MACHAMP ; 068
 
-	db  144, 170,  80, 75, 65, 85
+	db  144, 175,  80, 75, 65, 85
 	;   hp  atk  def  spd  sat  sdf
 
 	db FIGHTING, FIGHTING ; type

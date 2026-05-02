@@ -1,11 +1,11 @@
 	db MEWTWO ; 150
 
-	db 126, 140,  90, 130, 201, 200
+	db 126, 140,  90, 130, 251, 200
 	;   hp  atk  def  spd  sat  sdf
 
 	db PSYCHIC_TYPE, PSYCHIC_TYPE ; type
 	db 3 ; catch rate
-	db 220 ; base exp
+	db 250 ; base exp
 	db BERSERK_GENE, BERSERK_GENE ; items
 	db GENDER_UNKNOWN ; gender ratio
 	db 100 ; unknown 1

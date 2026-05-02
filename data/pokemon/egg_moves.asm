@@ -390,11 +390,13 @@ ScytherEggMoves:
 	db RAZOR_WIND
 	db REVERSAL
 	db LIGHT_SCREEN
+	db EXTREMESPEED
 	db -1 ; end
 
 PinsirEggMoves:
 	db FURY_ATTACK
 	db FLAIL
+	db LEECH_LIFE
 	db -1 ; end
 
 LaprasEggMoves:
@@ -438,6 +440,7 @@ DratiniEggMoves:
 	db MIST
 	db HAZE
 	db SUPERSONIC
+	db EXTREMESPEED
 	db -1 ; end
 
 ChikoritaEggMoves:

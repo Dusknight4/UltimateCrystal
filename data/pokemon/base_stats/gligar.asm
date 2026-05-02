@@ -5,7 +5,7 @@
 
 	db GROUND, FLYING ; type
 	db 60 ; catch rate
-	db 148 ; base exp
+	db 158 ; base exp
 	db POISON_BARB, NO_ITEM ; items
 	db GENDER_F50 ; gender ratio
 	db 100 ; unknown 1

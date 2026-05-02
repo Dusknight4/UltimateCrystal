@@ -1,11 +1,11 @@
 	db FORRETRESS ; 205
 
-	db  75,  90, 140,  40,  60,  90
+	db  85,  90, 175,  40,  60,  150
 	;   hp  atk  def  spd  sat  sdf
 
 	db BUG, STEEL ; type
 	db 75 ; catch rate
-	db 118 ; base exp
+	db 198 ; base exp
 	db METAL_COAT, NO_ITEM ; items
 	db GENDER_F50 ; gender ratio
 	db 100 ; unknown 1

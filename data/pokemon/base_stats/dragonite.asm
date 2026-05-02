@@ -1,11 +1,11 @@
 	db DRAGONITE ; 149
 
-	db  91, 134,  95,  80, 100, 100
+	db  131, 144,  95,  80, 120, 100
 	;   hp  atk  def  spd  sat  sdf
 
 	db DRAGON, FLYING ; type
 	db 45 ; catch rate
-	db 218 ; base exp
+	db 249 ; base exp
 	db DRAGON_SCALE, DRAGON_SCALE ; items
 	db GENDER_F50 ; gender ratio
 	db 100 ; unknown 1
