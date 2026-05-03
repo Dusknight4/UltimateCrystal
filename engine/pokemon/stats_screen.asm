@@ -601,6 +601,7 @@ LoadPinkPage:
 	jr z, .NotImmuneToPkrs
 	hlcoord 8, 8
 	ld [hl], "." ; Pokérus immunity dot
+
 .NotImmuneToPkrs:
 	ld a, [wMonType]
 	cp BOXMON
@@ -612,26 +613,111 @@ LoadPinkPage:
 	pop hl
 	jr nz, .done_status
 	jr .StatusOK
+
 .HasPokerus:
 	ld de, .PkrsStr
 	hlcoord 1, 13
 	call PlaceString
 	jr .done_status
+
 .StatusOK:
 	ld de, .OK_str
 	call PlaceString
+
 .done_status
 	hlcoord 1, 15
-	predef PrintMonTypes
+
+	; Save real species.
+	ld a, [wCurSpecies]
+	push af
+
+	; Load real base data and save real types in bc.
+	push hl
+	call GetBaseData
+	ld a, [wBaseType1]
+	ld b, a
+	ld a, [wBaseType2]
+	ld c, a
+	pop hl
+	push bc
+
+	; Build pseudo-species byte from DVs:
+	; high nibble = low nibble of first DV byte
+	ld a, [wTempMonDVs]
+	and $0f
+	swap a
+	ld b, a
+
+	; low nibble = high nibble of second DV byte
+	ld a, [wTempMonDVs + 1]
+	and $f0
+	swap a
+	or b
+
+	; Load pseudo-species base data and save pseudo types in de.
+	ld [wCurSpecies], a
+	push hl
+	call GetBaseData
+	ld a, [wBaseType1]
+	ld d, a
+	ld a, [wBaseType2]
+	ld e, a
+	pop hl
+
+	; Restore real types into bc.
+	pop bc
+
+	; If first unused nibble is odd, use pseudo type 1.
+	; First unused nibble = high nibble of first DV byte.
+	ld a, [wTempMonDVs]
+	bit 4, a
+	jr z, .keep_real_type_1
+	ld a, d
+	jr .got_type_1
+
+.keep_real_type_1
+	ld a, b
+
+.got_type_1
+	ld [wBaseType1], a
+
+	; If second unused nibble is odd, use pseudo type 2.
+	; Second unused nibble = low nibble of second DV byte.
+	ld a, [wTempMonDVs + 1]
+	bit 0, a
+	jr z, .keep_real_type_2
+	ld a, e
+	jr .got_type_2
+
+.keep_real_type_2
+	ld a, c
+
+.got_type_2
+	ld [wBaseType2], a
+
+	; Restore real species before printing/EXP logic.
+	pop af
+	ld [wCurSpecies], a
+
+	; Print final mixed types from wBaseType1/wBaseType2.
+	call .PrintPinkPageTypes
+
+	; Reload real base data before EXP / growth-rate logic.
+	push hl
+	call GetBaseData
+	pop hl
+
 	hlcoord 9, 8
 	ld de, SCREEN_WIDTH
 	ld b, 10
 	ld a, $31 ; vertical divider
+
 .vertical_divider
 	ld [hl], a
 	add hl, de
 	dec b
 	jr nz, .vertical_divider
+
 	ld de, .ExpPointStr
 	hlcoord 10, 9
 	call PlaceString
@@ -663,6 +749,114 @@ LoadPinkPage:
 	ld [hl], $41 ; right exp bar end cap
 	ret
 
+.PrintPinkPageTypes:
+	; Rebuild pseudo-species byte from DVs:
+	; high nibble = low nibble of first DV byte
+	ld a, [wTempMonDVs]
+	and $0f
+	swap a
+	ld b, a
+
+	; low nibble = high nibble of second DV byte
+	ld a, [wTempMonDVs + 1]
+	and $f0
+	swap a
+	or b
+
+	; If result is 0 → force pure ??? / CurseType.
+	and a
+	jr z, .types_curse
+
+	; Manually handle overflow pseudo-species IDs.
+	cp $fc
+	jr z, .types_fire_ice
+	cp $fd
+	jr z, .types_dragon_steel
+	cp $fe
+	jr z, .types_dark_ice
+	cp $ff
+	jr z, .types_dragon_dark
+	jr .print_types
+
+.types_curse
+	ld a, CURSE_TYPE
+	ld [wBaseType1], a
+	ld [wBaseType2], a
+	jr .print_types
+
+.types_fire_ice
+	ld d, FIRE
+	ld e, ICE
+	jr .apply_fake_types
+
+.types_dragon_steel
+	ld d, DRAGON
+	ld e, STEEL
+	jr .apply_fake_types
+
+.types_dark_ice
+	ld d, DARK
+	ld e, ICE
+	jr .apply_fake_types
+
+.types_dragon_dark
+	ld d, DRAGON
+	ld e, DARK
+
+.apply_fake_types
+	; Attack nibble odd -> replace type 1.
+	ld a, [wTempMonDVs]
+	bit 4, a
+	jr z, .keep_existing_type_1
+	ld a, d
+	ld [wBaseType1], a
+
+.keep_existing_type_1
+	; Special nibble odd -> replace type 2.
+	ld a, [wTempMonDVs + 1]
+	bit 0, a
+	jr z, .keep_existing_type_2
+	ld a, e
+	ld [wBaseType2], a
+
+.keep_existing_type_2
+	jr .print_types
+
+.print_types
+	push hl
+	ld a, [wBaseType1]
+	call .PrintTypeName
+
+	ld a, [wBaseType1]
+	ld b, a
+	ld a, [wBaseType2]
+	cp b
+	pop hl
+	jr z, .hide_type_2
+
+	ld bc, SCREEN_WIDTH
+	add hl, bc
+	ld a, [wBaseType2]
+	jr .PrintTypeName
+
+.hide_type_2
+	ld a, " "
+	ld bc, SCREEN_WIDTH - 3
+	add hl, bc
+	ld [hl], a
+	inc bc
+	add hl, bc
+	ld bc, NAME_LENGTH_JAPANESE - 1
+	jp ByteFill
+
+.PrintTypeName:
+	push hl
+	ld [wNamedObjectIndex], a
+	predef GetTypeName
+	pop hl
+	ld de, wStringBuffer1
+	jp PlaceString
+
 .PrintNextLevel:
 	ld a, [wTempMonLevel]
 	push af
@@ -670,6 +864,7 @@ LoadPinkPage:
 	jr z, .AtMaxLevel
 	inc a
 	ld [wTempMonLevel], a
+
 .AtMaxLevel:
 	call PrintLevel
 	pop af
@@ -683,7 +878,6 @@ LoadPinkPage:
 	inc a
 	ld d, a
 	farcall CalcExpAtLevel
-	ld hl, wTempMonExp + 2
 	ld hl, wTempMonExp + 2
 	ldh a, [hQuotient + 3]
 	sub [hl]

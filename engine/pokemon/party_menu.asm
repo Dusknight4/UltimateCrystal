@@ -302,19 +302,76 @@ PlacePartyMonTMHMCompatibility:
 	ld c, a
 	ld b, 0
 	hlcoord 12, 2
+
 .loop
 	push bc
 	push hl
 	call PartyMenuCheckEgg
 	jr z, .next
+
 	push hl
+
+	; Set current party mon index/species for this row.
+	ld a, b
+	ld [wCurPartyMon], a
+
 	ld hl, wPartySpecies
 	ld e, b
 	ld d, 0
 	add hl, de
 	ld a, [hl]
 	ld [wCurPartySpecies], a
+	ld [wCurSpecies], a
+
+	; First check the real Pokemon normally.
 	predef CanLearnTMHMMove
+	ld a, c
+	and a
+	jr nz, .compatibility_checked
+
+	; Real Pokemon failed. Now use the exact same template logic as TeachTMHM.
+	ld a, [wCurSpecies]
+	push af
+	ld a, [wCurPartySpecies]
+	push af
+
+	; Build pseudo-species byte:
+	; high nibble = low nibble of first DV byte
+	ld a, MON_DVS
+	call GetPartyParamLocation
+	ld a, [hli]
+	and $0f
+	swap a
+	ld b, a
+
+	; low nibble = high nibble of second DV byte
+	ld a, [hl]
+	and $f0
+	swap a
+	or b
+
+	; If template is 0, 252, 253, 254, or 255, allow all TMs/HMs.
+	and a
+	jr z, .template_allows_all
+	cp $fc
+	jr nc, .template_allows_all
+
+	; Otherwise check template species compatibility.
+	ld [wCurSpecies], a
+	ld [wCurPartySpecies], a
+	predef CanLearnTMHMMove
+	jr .restore_species
+
+.template_allows_all
+	ld c, 1
+
+.restore_species
+	pop af
+	ld [wCurPartySpecies], a
+	pop af
+	ld [wCurSpecies], a
+
+.compatibility_checked
 	pop hl
 	call .PlaceAbleNotAble
 	call PlaceString

@@ -3879,15 +3879,113 @@ InitBattleMon:
 	ld de, wBattleMonLevel
 	ld bc, PARTYMON_STRUCT_LENGTH - MON_LEVEL
 	call CopyBytes
+
 	ld a, [wBattleMonSpecies]
 	ld [wTempBattleMonSpecies], a
 	ld [wCurPartySpecies], a
 	ld [wCurSpecies], a
 	call GetBaseData
+
+	; Save original species types in b/c.
 	ld a, [wBaseType1]
-	ld [wBattleMonType1], a
+	ld b, a
 	ld a, [wBaseType2]
+	ld c, a
+
+	; Build pseudo-species byte from battle DVs:
+	; high nibble = low nibble of first DV byte
+	ld a, [wBattleMonDVs]
+	and $0f
+	swap a
+	ld d, a
+
+	; low nibble = high nibble of second DV byte
+	ld a, [wBattleMonDVs + 1]
+	and $f0
+	swap a
+	or d
+
+	; If result is 0 → force pure ??? / CurseType.
+	and a
+	jr z, .battle_types_curse
+
+	; Manually handle overflow pseudo-species IDs.
+	cp $fc
+	jr z, .battle_types_fire_ice
+	cp $fd
+	jr z, .battle_types_dragon_steel
+	cp $fe
+	jr z, .battle_types_dark_ice
+	cp $ff
+	jr z, .battle_types_dragon_dark
+
+	; Normal pseudo-species path.
+	ld [wCurSpecies], a
+	call GetBaseData
+	ld a, [wBaseType1]
+	ld d, a
+	ld a, [wBaseType2]
+	ld e, a
+	jr .apply_battle_fake_types
+
+.battle_types_curse
+	ld a, CURSE_TYPE
+	ld [wBattleMonType1], a
 	ld [wBattleMonType2], a
+	jr .battle_types_done
+
+.battle_types_fire_ice
+	ld d, FIRE
+	ld e, ICE
+	jr .apply_battle_fake_types
+
+.battle_types_dragon_steel
+	ld d, DRAGON
+	ld e, STEEL
+	jr .apply_battle_fake_types
+
+.battle_types_dark_ice
+	ld d, DARK
+	ld e, ICE
+	jr .apply_battle_fake_types
+
+.battle_types_dragon_dark
+	ld d, DRAGON
+	ld e, DARK
+
+.apply_battle_fake_types
+	; Attack nibble odd -> replace type 1.
+	ld a, [wBattleMonDVs]
+	bit 4, a
+	jr z, .keep_battle_type_1
+	ld a, d
+	jr .got_battle_type_1
+
+.keep_battle_type_1
+	ld a, b
+
+.got_battle_type_1
+	ld [wBattleMonType1], a
+
+	; Special nibble odd -> replace type 2.
+	ld a, [wBattleMonDVs + 1]
+	bit 0, a
+	jr z, .keep_battle_type_2
+	ld a, e
+	jr .got_battle_type_2
+
+.keep_battle_type_2
+	ld a, c
+
+.got_battle_type_2
+	ld [wBattleMonType2], a
+
+.battle_types_done
+	; Restore real species/base data after pseudo lookup.
+	ld a, [wBattleMonSpecies]
+	ld [wCurSpecies], a
+	call GetBaseData
+
 	ld hl, wPartyMonNicknames
 	ld a, [wCurBattleMon]
 	call SkipNames

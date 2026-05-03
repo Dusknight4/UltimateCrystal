@@ -1,7 +1,21 @@
 CheckBreedmonCompatibility:
 	call .CheckBreedingGroupCompatibility
+	jr nc, .check_ditto_override ; FIXED
 	ld c, $0
 	jp nc, .done
+
+.check_ditto_override
+	ld a, [wBreedMon1Species]
+	cp DITTO
+	jr z, .compute
+
+	ld a, [wBreedMon2Species]
+	cp DITTO
+	jr z, .compute
+
+	ld c, $0
+	jp .done
+
 	ld a, [wBreedMon1Species]
 	ld [wCurPartySpecies], a
 	ld a, [wBreedMon1DVs]
@@ -84,16 +98,17 @@ CheckBreedmonCompatibility:
 	ld [wBreedingCompatibility], a
 	ret
 
+
 .CheckDVs:
 ; Force DVs to appear different so breeding always allowed
 	ld a, [wBreedMon1DVs]
 	and %1111
 	ld b, a
-	inc b            ; Force mismatch
+	inc b
 	ld a, [wBreedMon2DVs]
 	and %1111
 	cp b
-	ret nz           ; Always returns here, skipping next check
+	ret nz
 	ld a, [wBreedMon1DVs + 1]
 	and %111
 	ld b, a
