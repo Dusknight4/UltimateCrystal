@@ -1,10 +1,10 @@
 CheckBreedmonCompatibility:
 	call .CheckBreedingGroupCompatibility
-	jr nc, .check_ditto_override ; FIXED
 	ld c, $0
 	jp nc, .done
 
-.check_ditto_override
+	; Ditto already passed egg group compatibility.
+	; If either parent is Ditto, skip gender checks.
 	ld a, [wBreedMon1Species]
 	cp DITTO
 	jr z, .compute
@@ -12,9 +12,6 @@ CheckBreedmonCompatibility:
 	ld a, [wBreedMon2Species]
 	cp DITTO
 	jr z, .compute
-
-	ld c, $0
-	jp .done
 
 	ld a, [wBreedMon1Species]
 	ld [wCurPartySpecies], a
@@ -53,18 +50,7 @@ CheckBreedmonCompatibility:
 
 .genderless
 	ld c, $0
-	ld a, [wBreedMon1Species]
-	cp DITTO
-	jr z, .ditto1
-	ld a, [wBreedMon2Species]
-	cp DITTO
-	jr nz, .done
-	jr .compute
-
-.ditto1
-	ld a, [wBreedMon2Species]
-	cp DITTO
-	jr z, .done
+	jr .done
 
 .compute
 	call .CheckDVs
@@ -77,8 +63,8 @@ CheckBreedmonCompatibility:
 	ld c, 254
 	jr z, .compare_ids
 	ld c, 128
+
 .compare_ids
-	; Speed up
 	ld a, [wBreedMon1ID]
 	ld b, a
 	ld a, [wBreedMon2ID]
@@ -97,7 +83,6 @@ CheckBreedmonCompatibility:
 	ld a, c
 	ld [wBreedingCompatibility], a
 	ret
-
 
 .CheckDVs:
 ; Force DVs to appear different so breeding always allowed
