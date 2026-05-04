@@ -3437,6 +3437,79 @@ LoadEnemyMonToSwitchTo:
 	ld [wCurPartySpecies], a
 	call LoadEnemyMon
 
+	; Save real types.
+	ld a, [wEnemyMonType1]
+	ld b, a
+	ld a, [wEnemyMonType2]
+	ld c, a
+
+	; Build pseudo-species byte:
+	; high nibble = low nibble of first DV byte
+	ld a, [wEnemyMonDVs]
+	and $0f
+	swap a
+	ld d, a
+
+	; low nibble = high nibble of second DV byte
+	ld a, [wEnemyMonDVs + 1]
+	and $f0
+	swap a
+	or d
+
+	and a
+	jr z, .types_curse
+	cp $fc
+	jr nc, .types_overflow
+
+	ld [wCurSpecies], a
+	call GetBaseData
+	ld a, [wBaseType1]
+	ld d, a
+	ld a, [wBaseType2]
+	ld e, a
+	jr .apply_types
+
+.types_curse
+	ld a, CURSE_TYPE
+	ld [wEnemyMonType1], a
+	ld [wEnemyMonType2], a
+	jr .types_done
+
+.types_overflow
+	sub $fc
+	add a
+	ld e, a
+	ld d, 0
+	ld hl, .OverflowTypes
+	add hl, de
+	ld a, [hli]
+	ld d, a
+	ld e, [hl]
+
+.apply_types
+	ld a, [wEnemyMonDVs]
+	bit 4, a
+	jr z, .keep_type_1
+	ld b, d
+
+.keep_type_1
+	ld a, b
+	ld [wEnemyMonType1], a
+
+	ld a, [wEnemyMonDVs + 1]
+	bit 0, a
+	jr z, .keep_type_2
+	ld c, e
+
+.keep_type_2
+	ld a, c
+	ld [wEnemyMonType2], a
+
+.types_done
+	ld a, [wEnemyMonSpecies]
+	ld [wCurSpecies], a
+	call GetBaseData
+
 	ld a, [wCurPartySpecies]
 	cp UNOWN
 	jr nz, .skip_unown
@@ -3447,14 +3520,20 @@ LoadEnemyMonToSwitchTo:
 	predef GetUnownLetter
 	ld a, [wUnownLetter]
 	ld [wFirstUnownSeen], a
-.skip_unown
 
+.skip_unown
 	ld hl, wEnemyMonHP
 	ld a, [hli]
 	ld [wEnemyHPAtTimeOfPlayerSwitch], a
 	ld a, [hl]
 	ld [wEnemyHPAtTimeOfPlayerSwitch + 1], a
 	ret
+
+.OverflowTypes:
+	db FIRE, ICE
+	db DRAGON, STEEL
+	db DARK, ICE
+	db DRAGON, DARK
 
 CheckWhetherToAskSwitch:
 	ld a, [wBattleHasJustStarted]
@@ -4042,7 +4121,7 @@ ResetPlayerStatLevels:
 	ret
 
 InitEnemyMon:
-	ld a, [wCurPartyMon]
+	ld a, [wCurPartyMon]	
 	ld hl, wOTPartyMon1Species
 	call GetPartyLocation
 	ld de, wEnemyMonSpecies
@@ -4059,111 +4138,9 @@ InitEnemyMon:
 	ld de, wEnemyMonLevel
 	ld bc, PARTYMON_STRUCT_LENGTH - MON_LEVEL
 	call CopyBytes
-
 	ld a, [wEnemyMonSpecies]
 	ld [wCurSpecies], a
 	call GetBaseData
-
-	; Save original species types in b/c.
-	ld a, [wBaseType1]
-	ld b, a
-	ld a, [wBaseType2]
-	ld c, a
-
-	; Build pseudo-species byte from enemy DVs:
-	; high nibble = low nibble of first DV byte
-	ld a, [wEnemyMonDVs]
-	and $0f
-	swap a
-	ld d, a
-
-	; low nibble = high nibble of second DV byte
-	ld a, [wEnemyMonDVs + 1]
-	and $f0
-	swap a
-	or d
-
-	; If result is 0 → force pure ??? / CurseType.
-	and a
-	jr z, .enemy_types_curse
-
-	; Manually handle overflow pseudo-species IDs.
-	cp $fc
-	jr z, .enemy_types_fire_ice
-	cp $fd
-	jr z, .enemy_types_dragon_steel
-	cp $fe
-	jr z, .enemy_types_dark_ice
-	cp $ff
-	jr z, .enemy_types_dragon_dark
-
-	; Normal pseudo-species path.
-	ld [wCurSpecies], a
-	call GetBaseData
-	ld a, [wBaseType1]
-	ld d, a
-	ld a, [wBaseType2]
-	ld e, a
-	jr .apply_enemy_fake_types
-
-.enemy_types_curse
-	ld a, CURSE_TYPE
-	ld [wEnemyMonType1], a
-	ld [wEnemyMonType2], a
-	jr .enemy_types_done
-
-.enemy_types_fire_ice
-	ld d, FIRE
-	ld e, ICE
-	jr .apply_enemy_fake_types
-
-.enemy_types_dragon_steel
-	ld d, DRAGON
-	ld e, STEEL
-	jr .apply_enemy_fake_types
-
-.enemy_types_dark_ice
-	ld d, DARK
-	ld e, ICE
-	jr .apply_enemy_fake_types
-
-.enemy_types_dragon_dark
-	ld d, DRAGON
-	ld e, DARK
-
-.apply_enemy_fake_types
-	; Attack nibble odd -> replace type 1.
-	ld a, [wEnemyMonDVs]
-	bit 4, a
-	jr z, .keep_enemy_type_1
-	ld a, d
-	jr .got_enemy_type_1
-
-.keep_enemy_type_1
-	ld a, b
-
-.got_enemy_type_1
-	ld [wEnemyMonType1], a
-
-	; Special nibble odd -> replace type 2.
-	ld a, [wEnemyMonDVs + 1]
-	bit 0, a
-	jr z, .keep_enemy_type_2
-	ld a, e
-	jr .got_enemy_type_2
-
-.keep_enemy_type_2
-	ld a, c
-
-.got_enemy_type_2
-	ld [wEnemyMonType2], a
-
-.enemy_types_done
-	; Restore real species/base data after pseudo lookup.
-	ld a, [wEnemyMonSpecies]
-	ld [wCurSpecies], a
-	call GetBaseData
-
 	ld hl, wOTPartyMonNicknames
 	ld a, [wCurPartyMon]
 	call SkipNames
@@ -4175,23 +4152,25 @@ InitEnemyMon:
 	ld bc, PARTYMON_STRUCT_LENGTH - MON_ATK
 	call CopyBytes
 	call ApplyStatusEffectOnEnemyStats
-
-	; Do not copy wBaseType1/wBaseType2 here.
-	; Enemy types were already set above.
-
+	ld hl, wBaseType1
+	ld de, wEnemyMonType1
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hl]
+	ld [de], a
 	; The enemy mon's base Sp. Def isn't needed since its base
 	; Sp. Atk is also used to calculate Sp. Def stat experience.
 	ld hl, wBaseStats
 	ld de, wEnemyMonBaseStats
 	ld b, NUM_STATS - 1
-
+	
 .loop
 	ld a, [hli]
 	ld [de], a
 	inc de
 	dec b
 	jr nz, .loop
-
 	ld a, [wCurPartyMon]
 	ld [wCurOTMon], a
 	ret
