@@ -132,20 +132,11 @@ TeachTMHM:
 	ld a, [wCurPartySpecies]
 	push af
 
-	; Build pseudo-species byte:
-	; high nibble = low nibble of first DV byte
+	; Use full Speed/Special DV byte as template species.
 	ld a, MON_DVS
 	call GetPartyParamLocation
-	ld a, [hli]
-	and $0f
-	swap a
-	ld b, a
-
-	; low nibble = high nibble of second DV byte
+	inc hl
 	ld a, [hl]
-	and $f0
-	swap a
-	or b
 
 	; If template is 0, 252, 253, 254, or 255, allow all TMs/HMs.
 	and a

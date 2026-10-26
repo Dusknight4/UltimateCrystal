@@ -641,18 +641,8 @@ LoadPinkPage:
 	pop hl
 	push bc
 
-	; Build pseudo-species byte from DVs:
-	; high nibble = low nibble of first DV byte
-	ld a, [wTempMonDVs]
-	and $0f
-	swap a
-	ld b, a
-
-	; low nibble = high nibble of second DV byte
+	; Use full Speed/Special DV byte as template species. Psuedo
 	ld a, [wTempMonDVs + 1]
-	and $f0
-	swap a
-	or b
 
 	; Load pseudo-species base data and save pseudo types in de.
 	ld [wCurSpecies], a
@@ -667,10 +657,9 @@ LoadPinkPage:
 	; Restore real types into bc.
 	pop bc
 
-	; If first unused nibble is odd, use pseudo type 1.
-	; First unused nibble = high nibble of first DV byte.
+	; Attack DV 8-15 -> use template type 1.
 	ld a, [wTempMonDVs]
-	bit 4, a
+	and $f0
 	jr z, .keep_real_type_1
 	ld a, d
 	jr .got_type_1
@@ -681,9 +670,8 @@ LoadPinkPage:
 .got_type_1
 	ld [wBaseType1], a
 
-	; If second unused nibble is odd, use pseudo type 2.
-	; Second unused nibble = low nibble of second DV byte.
-	ld a, [wTempMonDVs + 1]
+	; Defense DV odd -> use template type 2.
+	ld a, [wTempMonDVs]
 	bit 0, a
 	jr z, .keep_real_type_2
 	ld a, e
@@ -750,18 +738,8 @@ LoadPinkPage:
 	ret
 
 .PrintPinkPageTypes:
-	; Rebuild pseudo-species byte from DVs:
-	; high nibble = low nibble of first DV byte
-	ld a, [wTempMonDVs]
-	and $0f
-	swap a
-	ld b, a
-
-	; low nibble = high nibble of second DV byte
+	; Use full Speed/Special DV byte as template species.
 	ld a, [wTempMonDVs + 1]
-	and $f0
-	swap a
-	or b
 
 	; If result is 0 → force pure ??? / CurseType.
 	and a
@@ -804,16 +782,16 @@ LoadPinkPage:
 	ld e, DARK
 
 .apply_fake_types
-	; Attack nibble odd -> replace type 1.
+	; Attack DV 8-15 -> replace type 1.
 	ld a, [wTempMonDVs]
-	bit 4, a
+	and $f0
 	jr z, .keep_existing_type_1
 	ld a, d
 	ld [wBaseType1], a
 
 .keep_existing_type_1
-	; Special nibble odd -> replace type 2.
-	ld a, [wTempMonDVs + 1]
+	; Defense DV odd -> replace type 2.
+	ld a, [wTempMonDVs]
 	bit 0, a
 	jr z, .keep_existing_type_2
 	ld a, e

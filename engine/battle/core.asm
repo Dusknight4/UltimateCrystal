@@ -3443,18 +3443,8 @@ LoadEnemyMonToSwitchTo:
 	ld a, [wEnemyMonType2]
 	ld c, a
 
-	; Build pseudo-species byte:
-	; high nibble = low nibble of first DV byte
-	ld a, [wEnemyMonDVs]
-	and $0f
-	swap a
-	ld d, a
-
-	; low nibble = high nibble of second DV byte
+	; Use full Speed/Special DV byte as template species.
 	ld a, [wEnemyMonDVs + 1]
-	and $f0
-	swap a
-	or d
 
 	and a
 	jr z, .types_curse
@@ -3487,8 +3477,9 @@ LoadEnemyMonToSwitchTo:
 	ld e, [hl]
 
 .apply_types
+	; Attack DV 8–15 -> replace type 1.
 	ld a, [wEnemyMonDVs]
-	bit 4, a
+	and $f0
 	jr z, .keep_type_1
 	ld b, d
 
@@ -3496,7 +3487,8 @@ LoadEnemyMonToSwitchTo:
 	ld a, b
 	ld [wEnemyMonType1], a
 
-	ld a, [wEnemyMonDVs + 1]
+	; Defense DV odd -> replace type 2.
+	ld a, [wEnemyMonDVs]
 	bit 0, a
 	jr z, .keep_type_2
 	ld c, e
@@ -3971,18 +3963,8 @@ InitBattleMon:
 	ld a, [wBaseType2]
 	ld c, a
 
-	; Build pseudo-species byte from battle DVs:
-	; high nibble = low nibble of first DV byte
-	ld a, [wBattleMonDVs]
-	and $0f
-	swap a
-	ld d, a
-
-	; low nibble = high nibble of second DV byte
+	; Use full Speed/Special DV byte as template species.
 	ld a, [wBattleMonDVs + 1]
-	and $f0
-	swap a
-	or d
 
 	; If result is 0 → force pure ??? / CurseType.
 	and a
@@ -3998,7 +3980,7 @@ InitBattleMon:
 	cp $ff
 	jr z, .battle_types_dragon_dark
 
-	; Normal pseudo-species path.
+	; Normal template species path.
 	ld [wCurSpecies], a
 	call GetBaseData
 	ld a, [wBaseType1]
@@ -4033,9 +4015,9 @@ InitBattleMon:
 	ld e, DARK
 
 .apply_battle_fake_types
-	; Attack nibble odd -> replace type 1.
+	; Attack DV 8-15 -> replace type 1.
 	ld a, [wBattleMonDVs]
-	bit 4, a
+	and $f0
 	jr z, .keep_battle_type_1
 	ld a, d
 	jr .got_battle_type_1
@@ -4046,8 +4028,8 @@ InitBattleMon:
 .got_battle_type_1
 	ld [wBattleMonType1], a
 
-	; Special nibble odd -> replace type 2.
-	ld a, [wBattleMonDVs + 1]
+	; Defense DV odd -> replace type 2.
+	ld a, [wBattleMonDVs]
 	bit 0, a
 	jr z, .keep_battle_type_2
 	ld a, e
@@ -4060,7 +4042,7 @@ InitBattleMon:
 	ld [wBattleMonType2], a
 
 .battle_types_done
-	; Restore real species/base data after pseudo lookup.
+	; Restore real species/base data after template lookup.
 	ld a, [wBattleMonSpecies]
 	ld [wCurSpecies], a
 	call GetBaseData
@@ -8366,18 +8348,8 @@ InitEnemyWildmon:
 	ld a, [wBaseType2]
 	ld c, a
 
-	; Build pseudo-species byte from enemy DVs:
-	; high nibble = low nibble of first DV byte
-	ld a, [wEnemyMonDVs]
-	and $0f
-	swap a
-	ld d, a
-
-	; low nibble = high nibble of second DV byte
+	; Use full Speed/Special DV byte as template species.
 	ld a, [wEnemyMonDVs + 1]
-	and $f0
-	swap a
-	or d
 
 	; If result is 0 → force pure ??? / CurseType.
 	and a
@@ -8393,7 +8365,7 @@ InitEnemyWildmon:
 	cp $ff
 	jr z, .wild_types_dragon_dark
 
-	; Normal pseudo-species path.
+	; Normal template species path.
 	ld [wCurSpecies], a
 	call GetBaseData
 	ld a, [wBaseType1]
@@ -8428,9 +8400,9 @@ InitEnemyWildmon:
 	ld e, DARK
 
 .apply_wild_fake_types
-	; Attack nibble odd -> replace type 1.
+	; Attack DV 8-15 -> replace type 1.
 	ld a, [wEnemyMonDVs]
-	bit 4, a
+	and $f0
 	jr z, .keep_wild_type_1
 	ld a, d
 	jr .got_wild_type_1
@@ -8441,8 +8413,8 @@ InitEnemyWildmon:
 .got_wild_type_1
 	ld [wEnemyMonType1], a
 
-	; Special nibble odd -> replace type 2.
-	ld a, [wEnemyMonDVs + 1]
+	; Defense DV odd -> replace type 2.
+	ld a, [wEnemyMonDVs]
 	bit 0, a
 	jr z, .keep_wild_type_2
 	ld a, e
@@ -8455,7 +8427,7 @@ InitEnemyWildmon:
 	ld [wEnemyMonType2], a
 
 .wild_types_done
-	; Restore real species/base data after pseudo lookup.
+	; Restore real species/base data after template lookup.
 	ld a, [wEnemyMonSpecies]
 	ld [wCurSpecies], a
 	call GetBaseData
