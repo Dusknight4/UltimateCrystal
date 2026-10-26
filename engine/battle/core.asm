@@ -6212,11 +6212,22 @@ LoadEnemyMon:
 .InitDVs:
 ; Trainer DVs
 
-; Make trainer DVs random like wild Pokémon
-; These are the DVs we'll use if we're actually in a trainer battle
+; Trainer DVs are rolled randomly once when the party is built,
+; so reuse the party struct's DVs here.
 	ld a, [wBattleMode]
 	dec a
-	jr nz, .GenerateDVs  ; was .UpdateDVs before — now skip to random generation
+	jr z, .WildDVs
+	dec a
+	jr nz, .GenerateDVs ; not in battle
+	ld a, [wCurPartyMon]
+	ld hl, wOTPartyMon1DVs
+	call GetPartyLocation
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	jr .UpdateDVs
+
+.WildDVs:
 
 ; Wild DVs
 ; Here's where the fun starts
@@ -8284,6 +8295,8 @@ InitEnemyTrainer:
 	ld [wEnemyMonDVs], a
 	callfar GetTrainerAttributes
 	callfar ReadTrainerParty
+	xor a ; trainer pic palette
+	ld [wEnemyMonDVs + 1], a
 
 	; RIVAL1's first mon has no held item
 	ld a, [wTrainerClass]

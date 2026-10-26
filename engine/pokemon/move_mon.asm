@@ -177,12 +177,7 @@ endr
 	push hl
 	ld a, [wMonType]
 	and $f
-	jr z, .registerpokedex
-
-	push hl
-	farcall GetTrainerDVs
-	pop hl
-	jr .initializeDVs
+	jr nz, .random_dvs ; trainer mon
 
 .registerpokedex
 	ld a, [wCurPartySpecies]
@@ -201,6 +196,7 @@ endr
 	and a
 	jr nz, .copywildmonDVs
 
+.random_dvs
 	call Random
 	ld b, a
 	call Random
