@@ -531,7 +531,11 @@ FillMoves:
 	push de
 	ld a, b
 	ld [wCurPartySpecies], a
+	ld a, [wSkipMovesBeforeLevelUp]
+	and a
+	jr nz, .direct
 	ld de, wListMoves_MoveIndicesBuffer
+.direct
 	call .FillMovesForCurrentSpecies
 	pop de
 	pop af

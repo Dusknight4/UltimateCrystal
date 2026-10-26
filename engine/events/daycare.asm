@@ -606,11 +606,6 @@ DayCare_InitBreeding:
 	call CopyBytes
 	xor a
 	ld [wEggMonItem], a
-	ld de, wEggMonMoves
-	xor a ; FALSE
-	ld [wSkipMovesBeforeLevelUp], a
-	predef FillMoves
-	farcall InitEggMoves
 	ld hl, wEggMonID
 	ld a, [wPlayerID]
 	ld [hli], a
@@ -815,6 +810,13 @@ DayCare_InitBreeding:
 	ld [hl], a
 
 .SkipDVs:
+	ld a, [wEggMonDVs + 1]
+	ld [wEnemyMonDVs + 1], a
+	ld de, wEggMonMoves
+	xor a ; FALSE
+	ld [wSkipMovesBeforeLevelUp], a
+	predef FillMoves
+	farcall InitEggMoves
 	ld hl, wStringBuffer1
 	ld de, wMonOrItemNameBuffer
 	ld bc, NAME_LENGTH

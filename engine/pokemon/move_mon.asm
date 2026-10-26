@@ -133,7 +133,6 @@ rept NUM_MOVES - 1
 endr
 	ld [hl], a
 	ld [wSkipMovesBeforeLevelUp], a
-	predef FillMoves
 
 .next
 	pop de
@@ -211,6 +210,7 @@ endr
 	ld [de], a
 	inc de
 	ld a, c
+	ld [wEnemyMonDVs + 1], a
 	ld [de], a
 	inc de
 
@@ -219,6 +219,11 @@ endr
 	push de
 	inc hl
 	inc hl
+	ld d, h
+	ld e, l
+	predef FillMoves
+	pop de
+	push de
 	call FillPP
 	pop de
 	pop hl
@@ -876,6 +881,10 @@ RetrieveBreedmon:
 	call AddNTimes
 	ld d, h
 	ld e, l
+	ld hl, MON_DVS + 1 - MON_MOVES
+	add hl, de
+	ld a, [hl]
+	ld [wEnemyMonDVs + 1], a
 	ld a, TRUE
 	ld [wSkipMovesBeforeLevelUp], a
 	predef FillMoves
