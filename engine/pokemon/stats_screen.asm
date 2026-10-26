@@ -659,7 +659,7 @@ LoadPinkPage:
 
 	; Attack DV 8-15 -> use template type 1.
 	ld a, [wTempMonDVs]
-	and $f0
+	bit 7, a
 	jr z, .keep_real_type_1
 	ld a, d
 	jr .got_type_1
@@ -784,7 +784,7 @@ LoadPinkPage:
 .apply_fake_types
 	; Attack DV 8-15 -> replace type 1.
 	ld a, [wTempMonDVs]
-	and $f0
+	bit 7, a
 	jr z, .keep_existing_type_1
 	ld a, d
 	ld [wBaseType1], a
